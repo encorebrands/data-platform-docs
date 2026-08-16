@@ -222,6 +222,60 @@ body {
     if (input && input.getAttribute("placeholder") === "Search for models...") {
       input.setAttribute("placeholder", "Search models, sources, lineage...");
     }
+    hookLayerLayout();
+  }
+
+  function layerOf(id) {
+    if (id.indexOf("source.") === 0) return 0;
+    if (id.indexOf("stg_") !== -1) return 1;
+    if (id.indexOf("transform_") !== -1) return 2;
+    if (id.indexOf("core_dim_") !== -1 || id.indexOf("core_fct_") !== -1) return 3;
+    if (id.indexOf("marts_") !== -1) return 4;
+    return 5;
+  }
+
+  var hookedCy = null;
+  var organizing = false;
+  function hookLayerLayout() {
+    var cy = window.graph;
+    if (!cy || cy === hookedCy) return;
+    hookedCy = cy;
+    cy.on("layoutstop", function () {
+      if (organizing) return;
+      var launcher = document.querySelector(".launcher.on");
+      if (!launcher) return;
+      var orientation = "sidebar";
+      try {
+        orientation = angular
+          .element(launcher)
+          .isolateScope().graphService.orientation;
+      } catch (e) {}
+      if (orientation !== "fullscreen") return;
+      organizing = true;
+      try {
+        columnLayout(cy);
+        cy.fit(50);
+      } finally {
+        organizing = false;
+      }
+    });
+  }
+
+  function columnLayout(cy) {
+    var buckets = [[], [], [], [], [], []];
+    cy.nodes().forEach(function (n) {
+      buckets[layerOf(n.id())].push(n);
+    });
+    cy.batch(function () {
+      buckets.forEach(function (nodes, layer) {
+        nodes.sort(function (a, b) {
+          return a.id().localeCompare(b.id());
+        });
+        nodes.forEach(function (n, i) {
+          n.position({ x: 90 + layer * 340, y: 40 + i * 48 });
+        });
+      });
+    });
   }
 
   function mount() {
