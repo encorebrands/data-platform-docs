@@ -170,6 +170,21 @@ body {
   }
 }
 
+/* Lineage overlay: sit below the Encore header so Expand is not under GitHub.
+   dbt also hides the expand control under 960px ([data-large]); keep it. */
+.launcher.on {
+  z-index: 10100;
+}
+
+.launcher.on .launcher-content {
+  top: var(--ep-header-h) !important;
+  height: calc(100% - var(--ep-header-h)) !important;
+}
+
+.launcher.on [data-large] {
+  display: inline-block !important;
+}
+
 </style>
 <script>
 (function () {
