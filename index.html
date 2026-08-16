@@ -242,23 +242,29 @@ body {
     hookedCy = cy;
     cy.on("layoutstop", function () {
       if (organizing) return;
-      var launcher = document.querySelector(".launcher.on");
-      if (!launcher) return;
-      var orientation = "sidebar";
-      try {
-        orientation = angular
-          .element(launcher)
-          .isolateScope().graphService.orientation;
-      } catch (e) {}
-      if (orientation !== "fullscreen") return;
-      organizing = true;
-      try {
-        columnLayout(cy);
-        cy.fit(50);
-      } finally {
-        organizing = false;
-      }
+      applyLayerColumns(cy);
     });
+    applyLayerColumns(cy);
+  }
+
+  function applyLayerColumns(cy) {
+    var launcher = document.querySelector(".launcher.on");
+    if (!launcher) return;
+    var orientation = "sidebar";
+    try {
+      orientation = angular
+        .element(launcher)
+        .isolateScope().graphService.orientation;
+    } catch (e) {}
+    if (orientation !== "fullscreen") return;
+    if (organizing) return;
+    organizing = true;
+    try {
+      columnLayout(cy);
+      cy.fit(50);
+    } finally {
+      organizing = false;
+    }
   }
 
   function columnLayout(cy) {
@@ -297,6 +303,7 @@ body {
   }
   var obs = new MutationObserver(brandSidebar);
   obs.observe(document.documentElement, { childList: true, subtree: true });
+  setInterval(hookLayerLayout, 400);
 })();
 
 </script>
