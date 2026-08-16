@@ -185,6 +185,13 @@ body {
   display: inline-block !important;
 }
 
+/* Node right-click menu is on body at z-index 1000; overlay is 10100 so the
+   menu paints on the docs page and only shows after you close lineage. */
+.graph-node-context-menu,
+.cy-context-menus-cxt-menu {
+  z-index: 10200 !important;
+}
+
 </style>
 <script>
 (function () {
