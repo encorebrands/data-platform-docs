@@ -225,13 +225,25 @@ body {
     hookLayerLayout();
   }
 
-  function layerOf(id) {
-    if (id.indexOf("source.") === 0) return 0;
+  function layerOf(n) {
+    var id = n.id();
+    var rt = n.data("resource_type") || "";
+    if (rt === "source" || id.indexOf("source.") === 0) return 0;
     if (id.indexOf("stg_") !== -1) return 1;
     if (id.indexOf("transform_") !== -1) return 2;
     if (id.indexOf("core_dim_") !== -1 || id.indexOf("core_fct_") !== -1) return 3;
     if (id.indexOf("marts_") !== -1) return 4;
     return 5;
+  }
+
+  function stem(id) {
+    var name = id.split(".").pop();
+    return name
+      .replace(/^stg_sellerlabs__/, "")
+      .replace(/^transform_sellerlabs__/, "")
+      .replace(/^core_fct_sellerlabs_/, "")
+      .replace(/^core_dim_sellerlabs_/, "")
+      .replace(/^marts_sellerlabs__/, "");
   }
 
   var hookedCy = null;
@@ -249,36 +261,41 @@ body {
 
   function applyLayerColumns(cy) {
     var launcher = document.querySelector(".launcher.on");
-    if (!launcher) return;
+    if (!launcher || organizing) return;
     var orientation = "sidebar";
     try {
       orientation = angular
         .element(launcher)
         .isolateScope().graphService.orientation;
     } catch (e) {}
-    if (orientation !== "fullscreen") return;
-    if (organizing) return;
     organizing = true;
     try {
-      columnLayout(cy);
-      cy.fit(50);
+      columnLayout(cy, orientation === "fullscreen");
+      cy.fit(40);
     } finally {
       organizing = false;
     }
   }
 
-  function columnLayout(cy) {
-    var buckets = [[], [], [], [], [], []];
+  function columnLayout(cy, fullscreen) {
+    var dx = fullscreen ? 360 : 280;
+    var dy = 52;
+    var yOf = {};
+    var stems = [];
     cy.nodes().forEach(function (n) {
-      buckets[layerOf(n.id())].push(n);
+      var s = stem(n.id());
+      if (stems.indexOf(s) === -1) stems.push(s);
+    });
+    stems.sort();
+    stems.forEach(function (s, i) {
+      yOf[s] = 40 + i * dy;
     });
     cy.batch(function () {
-      buckets.forEach(function (nodes, layer) {
-        nodes.sort(function (a, b) {
-          return a.id().localeCompare(b.id());
-        });
-        nodes.forEach(function (n, i) {
-          n.position({ x: 90 + layer * 340, y: 40 + i * 48 });
+      cy.nodes().forEach(function (n) {
+        var colLeft = 80 + layerOf(n) * dx;
+        n.position({
+          x: colLeft + n.width() / 2,
+          y: yOf[stem(n.id())],
         });
       });
     });
